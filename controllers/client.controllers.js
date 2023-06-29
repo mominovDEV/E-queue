@@ -1,5 +1,5 @@
 const pool = require("../config/db");
-const addClient = async (req, res) =>  {
+const addClient = async (req, res) => {
   try {
     const {
       client_last_name,
@@ -28,4 +28,18 @@ const addClient = async (req, res) =>  {
   } catch (error) {
     res.status(500).json("Serverda xatolik");
   }
+};
+
+const getClient = async (req, res) => {
+  try {
+    const clients = await pool.query(`select * from client`);
+    res.status(200).send(clients.rows);
+  } catch (error) {
+    res.status(500).json("Serverda xatolik");
+  }
+};
+
+module.exports = {
+  addClient,
+  getClient,
 };
