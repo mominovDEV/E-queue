@@ -9,7 +9,7 @@ const {
 
 const router = Router();
 
-router.post("/add", addOtp);
+router.post("/newotp", addOtp);
 router.get("/", getOtp);
 router.put("/:id", updateOtp);
 router.delete("/:id", deleteOtp);

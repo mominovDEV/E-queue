@@ -1,4 +1,50 @@
+const { encode, decode } = require("../services/crypt");
 const pool = require("../config/db");
+const { v4: uuidv4 } = require("uuid");
+const otpGenerator = require("otp-generator");
+// const uuid = require('uuid');
+
+function addMinutesToDate(date, minutes) {
+  return new Date(date.getTime() + minutes * 60000);
+}
+
+// const dates = {
+//   convert:function(d){
+//     return d.constructor ===
+//   }
+// }
+
+//     new OTP
+const newOtp = async (req, res) => {
+  const { phone_number } = req.body;
+  const otp = otpGenerator.generate(4, {
+    upperCaseAlphabets: false,
+    lowerCaseAlphabets: false,
+    specialChars: false,
+  });
+
+  const now = new Date();
+  const expiration_time = addMinutesToDate(now, 3);
+
+  const newOtp = await pool.query(
+    `INSERT INTO otp (id, otp, expiration_time) VALUES($1,$2,$3) returning id;`,
+    [uuidv4(), otp, expiration_time]
+  );
+
+  const details = {
+    timestamp: now,
+    check: phone_number,
+    success: true,
+    message: "OTP sent to user",
+    otp_id: newOtp.rows[0].id,
+  };
+  const encoded = await encode(JSON.stringify(details));
+  return res.send({ Status: "Success", Details: encoded });
+};
+
+
+// addotp
+
 const addOtp = async (req, res) => {
   try {
     const { id, otp, expiration_time, verified } = req.body;
