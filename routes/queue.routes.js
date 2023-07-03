@@ -5,7 +5,7 @@ const {
   updateQueue,
   deleteQueue,
   getQueueById,
-} = require("../controllers/queue.controllers");
+} = require("../controllers/queue.controller");
 
 const router = Router();
 
