@@ -2,6 +2,14 @@ const { encode, decode } = require("../services/crypt");
 const pool = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 const otpGenerator = require("otp-generator");
+const bcrypt = require('bcrypt');
+const DeviceDetecter = require("node-device-detector");
+
+const detecter = new DeviceDetecter({
+  clientIndex: true,
+  deviceIndex: true,
+  deviceAliceCode: true,
+});
 // const uuid = require('uuid');
 
 function addMinutesToDate(date, minutes) {
@@ -24,9 +32,8 @@ const dates = {
   },
   compare: function (a, b) {
     return isFinite((a = this.convert(a).valueOf())) &&
-      isFinite((start = this.convert(start).valueOf())) &&
-      isFinite((end = this.convert(end).valueOf()))
-      ? start <= d && d <= end
+      isFinite((b = this.convert(b).valueOf()))
+      ? (a > b) - (a < b)
       : NaN;
   },
 };
@@ -70,22 +77,53 @@ const verifyOTP = async (req, res) => {
             `select * from client where client_phone_number = $1;`,
             [check]
           );
+          let client_id, details;
+
           if (clientResult.rows.length == 0) {
-            const response = {
-              Status: "Success",
-              Details: "new",
-              Check: check,
-            };
-            return res.status(200).send(response);
+            const newClient = await pool.query(
+              `insert into client (client_phone_number,otp_id)vaues($1,$2) RETURNING id`,
+              [check, obj.otp_id]
+            );
+            client_id = newClient.rows[0].id;
+            details = "new";
           } else {
-            const response = {
-              Status: "Success",
-              Details: "old",
-              Check: check,
-              ClientName: clientResult.rows[0].client_first_name,
-            };
-            return res.status(200).send(response);
+            client_id = clientResult.rows[0].id;
+            details = "old";
+            await pool.query(`UPDATE client SET otp_id=$2 WHERE id = $1;`, [
+              client_id,
+              obj.otp_id,
+            ]);
           }
+          const payload = {
+            id: client_id,
+          };
+          const tokens = myJwt.generateTokens(payload);
+          // save refresh_token to database
+          const hashedRefreshToken =bcrypt.hashSync(tokens.refreshToken,7);
+          const userAgent = req.headers["user-agent"];
+          const resUserAgent = detecter.detect(userAgent);
+          const {os,client,device}=resUserAgent;
+          await pool.query(
+            `INSERT INTO token(table_name,user_id,user_os,user_device,\
+              user_browser,hashed_refresh_token) values($1, $2,$3,$4,$5,$6) returning id`,
+              ["client",client_id,os,device,client,hashedRefreshToken]
+          )
+
+          //setcookie
+          res.cookie("refreshToken",tokens.refreshToken,{
+            maxAge:config.get("refresh_ms"),
+            httpOnly:true,
+          });
+
+          const response = {
+            Status: "Success",
+            Details: details,
+            Ckeck: check,
+            ClientID: client_id,
+            token: tokens,
+          };
+
+          return res.status(200).send(response);
         } else {
           const response = { Status: "Failure", Details: "OTP not mathed" };
           return res.status(400).send(response);
@@ -131,6 +169,9 @@ const newOtp = async (req, res) => {
   const encoded = await encode(JSON.stringify(details));
   return res.send({ Status: "Success", Details: encoded });
 };
+/////////////
+
+////////////////////////////////
 
 // addotp
 

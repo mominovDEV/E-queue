@@ -1,4 +1,12 @@
 const pool = require("../config/db");
+const DeviceDetecter = require("node-device-detector");
+
+const detecter = new DeviceDetecter({
+  clientIndex: true,
+  deviceIndex: true,
+  deviceAliceCode: true,
+});
+
 const addClient = async (req, res) => {
   try {
     const {
@@ -31,6 +39,10 @@ const addClient = async (req, res) => {
 };
 const getClient = async (req, res) => {
   try {
+    const userAgent = req.headers["user-agent"];
+    console.log(userAgent);
+    const result = detecter.detect(userAgent);
+    console.log("result parse ", result);
     const client = await pool.query(
       `
         select * from client
@@ -43,6 +55,7 @@ const getClient = async (req, res) => {
     res.status(500).json("Serverda xatolik");
   }
 };
+
 const getClientById = async (req, res) => {
   try {
     const id = req.params.id;

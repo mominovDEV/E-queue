@@ -1,10 +1,14 @@
 {
-    "port":3000,
-    "db_host":"localhost",
-    "db_username":"postgres",
-    "db_password":"5432",
-    "db_port":5432,
-    "db_name":"e-navbat",
-    "crypt_password":"Very_very_Secret_P@55w0rd",
-    "iv":"28408e46"
+  "port": 3000,
+  "db_host": "localhost",
+  "db_username": "postgres",
+  "db_password": "5432",
+  "db_port": 5432,
+  "db_name": "e-navbat",
+  "crypt_password": "Very_very_Secret_P@55w0rd",
+  "iv": "28408e46",
+  "access_key": "BuAccessUchunMahfiyKalit",
+  "refresh_key": "BuRefreshUchunMahfiyKalit",
+  "acces_time": "30s",
+  "refresh_time": "1d"
 }
